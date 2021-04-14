@@ -72,9 +72,15 @@ Requires: python3-neuron
 Requires: python3dist(setuptools)
 
 # Not needed for F33+
-%py_provides python3-%{srcname}
+%py_provides python3-%{pypi_name}
 
 %description -n python3-%{pypi_name} %_description
+
+%package -n python3-%{pypi_name}-doc
+Summary:        Documentation for %{pypi_name}
+
+
+%description -n python3-%{pypi_name}-doc %_description
 
 %prep
 %autosetup -n %{pretty_name}-%{commit}
@@ -87,6 +93,20 @@ sed -i '/scoop/ d' setup.py
 sed -i 's/^\(.*:.*\)jupyter$/\1/' Makefile
 
 mv -v %{SOURCE1} "%{pypi_name}/_version.py"
+
+# Remove gitignore files in the examples
+find examples/ -name ".gitignore" -delete
+# Remove dummy files that keep the folder tracked in git for upstream
+find examples/ -name "dummy.inc" -delete
+
+# Correct shebangs
+find examples/ -type f -name "*.py" -exec sed -i 's|^#![  ]*/usr/bin/env.*$|/usr/bin/python3/|' '{}' 2>/dev/null \;
+find examples/ -type f -name "*.py" -exec chmod -x '{}' \;
+
+# Correct end of line encodings
+find examples/ -type f -name "*.mod" -exec sed -i 's/\r$//' '{}' \;
+find examples/ -type f -name "*.asc" -exec sed -i 's/\r$//' '{}' \;
+find examples/ -type f -name "*.csv" -exec sed -i 's/\r$//' '{}' \;
 
 %build
 %py3_build
@@ -116,7 +136,16 @@ popd
 %{python3_sitelib}/%{pypi_name}-%{version}-py%{python3_version}.egg-info
 %{_bindir}/bpopt_tasksdb
 
+%files -n python3-%{pypi_name}-doc
+%license LICENSE.txt LGPL.txt
+%doc examples
+
 %changelog
+* Wed Apr 14 2021 Ankur Sinha <ankursinha AT fedoraproject DOT org> - 1.9.149-1
+- Correct pyprovide macro
+- Include examples
+- Split examples to sub-package
+
 * Sun Apr 11 2021 Ankur Sinha <ankursinha AT fedoraproject DOT org> - 1.9.149-1
 - Update to latest release
 
